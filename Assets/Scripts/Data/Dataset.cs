@@ -112,3 +112,32 @@ public class Dataset
     public float[] GetInterleavedNormalizedBuffer(
         int[] columnIndices)
     {
+        int stride = columnIndices.Length;
+
+        float[] buffer =
+            new float[RowCount * stride];
+
+        for (int rowIndex = 0; rowIndex < RowCount; rowIndex++)
+        {
+            DatasetRow row = Rows[rowIndex];
+
+            int rowOffset = rowIndex * stride;
+
+            for (int columnSlot = 0;
+                columnSlot < stride;
+                columnSlot++)
+            {
+                int columnIndex =
+                    columnIndices[columnSlot];
+
+                buffer[rowOffset + columnSlot] =
+                    columnIndex >= 0 &&
+                    columnIndex < ColumnCount
+                        ? row.GetNormalizedValue(columnIndex)
+                        : 0f;
+            }
+        }
+
+        return buffer;
+    }
+}
