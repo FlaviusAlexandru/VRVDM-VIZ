@@ -1,0 +1,350 @@
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+namespace DataViz
+{
+    public class ScatterplotVisualizer : MonoBehaviour
+    {
+        [Header("References")]
+        public MultiplayerScatterplotManager m_Manager;
+        public GameObject m_AxisLabelPrefab; // TMPro in world space
+
+        [Header("Visualization Settings")]
+        public float m_AxisLength = 1.0f; // Size of the 3D grid
+        public Material m_PointMaterial; // Shared material to clone
+        public Material m_AxisMaterial;
+
+        // Parent container for points
+        private Transform m_PointsContainer;
+        private Transform m_AxesContainer;
+
+        private List<GameObject> m_ActivePoints = new();
+        private List<GameObject> m_ActiveAxes = new();
+
+        private void Start()
+        {
+            if (m_Manager == null)
+                m_Manager = MultiplayerScatterplotManager.Instance;
+
+            if (m_Manager != null)
+            {
+                m_Manager.OnPlotSettingsChanged += RegeneratePlot;
+            }
+
+            // Create containers
+            m_PointsContainer = new GameObject("Points").transform;
+            m_PointsContainer.SetParent(transform, false);
+            m_PointsContainer.localPosition = new Vector3(-m_AxisLength / 2f, -m_AxisLength / 2f, -m_AxisLength / 2f);
+
+            m_AxesContainer = new GameObject("Axes").transform;
+            m_AxesContainer.SetParent(transform, false);
+            m_AxesContainer.localPosition = new Vector3(-m_AxisLength / 2f, -m_AxisLength / 2f, -m_AxisLength / 2f);
+
+            // Default material if none assigned
+            if (m_PointMaterial == null)
+            {
+                m_PointMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            }
+            if (m_AxisMaterial == null)
+            {
+                m_AxisMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                m_AxisMaterial.color = Color.white;
+            }
+
+            RegeneratePlot();
+        }
+
+        private void OnDestroy()
+        {
+            if (m_Manager != null)
+            {
+                m_Manager.OnPlotSettingsChanged -= RegeneratePlot;
+            }
+        }
+
+        public void RegeneratePlot()
+        {
+            ClearPoints();
+            ClearAxes();
+
+            if (m_Manager == null || m_Manager.LoadedDataset == null)
+                return;
+
+            Dataset dataset = m_Manager.LoadedDataset;
+            int xCol = m_Manager.XColumnIndex;
+            int yCol = m_Manager.YColumnIndex;
+            int zCol = m_Manager.ZColumnIndex;
+            int colorCol = m_Manager.ColorColumnIndex;
+            float pointSize = m_Manager.PointSize;
+
+            // 1. Build Grid and Axes Visuals
+            BuildAxesAndGrid(dataset, xCol, yCol, zCol);
+
+            // 2. Spawn Data Points
+            Color[] palette = new Color[]
+            {
+                Color.red, Color.blue, Color.green, Color.yellow, Color.cyan, Color.magenta,
+                new Color(1f, 0.5f, 0f), new Color(0.5f, 0f, 0.5f), new Color(0f, 0.5f, 0.5f),
+                new Color(0.7f, 0.2f, 0.2f), new Color(0.2f, 0.7f, 0.2f), new Color(0.2f, 0.2f, 0.7f)
+            };
+
+            // Gather categorical values if color col is categorical
+            List<string> uniqueColorCategories = new();
+            if (colorCol >= 0 && colorCol < dataset.ColumnCount)
+            {
+                var column = dataset.Columns[colorCol];
+                if (column.IsCategorical)
+                {
+                    uniqueColorCategories = new List<string>(column.UniqueValues);
+                }
+            }
+
+            for (int i = 0; i < dataset.RowCount; i++)
+            {
+                DatasetRow row = dataset.Rows[i];
+
+                float xNorm = row.GetNormalizedValue(xCol);
+                float yNorm = row.GetNormalizedValue(yCol);
+                float zNorm = row.GetNormalizedValue(zCol);
+
+                Vector3 localPosition = new Vector3(xNorm, yNorm, zNorm) * m_AxisLength;
+
+                // Create point sphere
+                GameObject pointObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                pointObj.name = $"Point_{i}";
+                pointObj.transform.SetParent(m_PointsContainer, false);
+                pointObj.transform.localPosition = localPosition;
+                pointObj.transform.localScale = Vector3.one * pointSize;
+
+                // Disable default sphere collider collision (avoid pushing player) and set as trigger
+                SphereCollider col = pointObj.GetComponent<SphereCollider>();
+                if (col != null)
+                {
+                    col.isTrigger = true;
+                }
+
+                // Apply material and color
+                Renderer renderer = pointObj.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    Material matInstance = Instantiate(m_PointMaterial);
+                    
+                    Color pointColor = Color.cyan; // Default color
+                    if (colorCol >= 0 && colorCol < dataset.ColumnCount)
+                    {
+                        var colMeta = dataset.Columns[colorCol];
+                        if (colMeta.IsNumeric)
+                        {
+                            // Numeric Gradient: Blue to Red
+                            float colorNorm = row.GetNormalizedValue(colorCol);
+                            pointColor = Color.Lerp(Color.blue, Color.red, colorNorm);
+                        }
+                        else if (colMeta.IsCategorical)
+                        {
+                            // Categorical Palette mapping
+                            string rawVal = row.GetRawValue(colorCol);
+                            int catIdx = uniqueColorCategories.IndexOf(rawVal);
+                            if (catIdx >= 0)
+                            {
+                                pointColor = palette[catIdx % palette.Length];
+                            }
+                        }
+                    }
+                    matInstance.color = pointColor;
+                    renderer.sharedMaterial = matInstance;
+                }
+
+                // Add Hover/Tooltip mechanics
+                DataPointInteractable dpi = pointObj.AddComponent<DataPointInteractable>();
+                
+                // Add TMPro Tooltip inside each point
+                GameObject tooltipObj = new GameObject("TooltipCanvas");
+                tooltipObj.transform.SetParent(pointObj.transform, false);
+                tooltipObj.transform.localPosition = new Vector3(0, 1.5f, 0); // Position slightly above the point
+                tooltipObj.transform.localScale = Vector3.one * (0.2f / pointSize); // Keep tooltip readable regardless of point size
+
+                Canvas canvas = tooltipObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.WorldSpace;
+                
+                RectTransform rect = tooltipObj.GetComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(300, 180);
+
+                // Add background panel
+                GameObject bgObj = new GameObject("Background");
+                bgObj.transform.SetParent(tooltipObj.transform, false);
+                UnityEngine.UI.Image bgImg = bgObj.AddComponent<UnityEngine.UI.Image>();
+                bgImg.color = new Color(0, 0, 0, 0.85f);
+                RectTransform bgRect = bgObj.GetComponent<RectTransform>();
+                bgRect.anchorMin = Vector2.zero;
+                bgRect.anchorMax = Vector2.one;
+                bgRect.sizeDelta = Vector2.zero;
+
+                // Add TextMeshPro
+                GameObject textObj = new GameObject("Text");
+                textObj.transform.SetParent(tooltipObj.transform, false);
+                TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
+                tmpText.fontSize = 18;
+                tmpText.alignment = TextAlignmentOptions.Left;
+                tmpText.enableWordWrapping = true;
+                tmpText.color = Color.white;
+                
+                RectTransform textRect = textObj.GetComponent<RectTransform>();
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.sizeDelta = new Vector2(-20, -20); // Margin
+                textRect.anchoredPosition = Vector2.zero;
+
+                // Setup tooltip reference
+                dpi.m_TooltipObject = tooltipObj;
+                dpi.m_TooltipText = tmpText;
+                dpi.SetupTooltip(row, dataset, xCol, yCol, zCol, colorCol);
+
+                // Hide tooltip initially
+                tooltipObj.SetActive(false);
+
+                m_ActivePoints.Add(pointObj);
+            }
+        }
+
+        private void BuildAxesAndGrid(Dataset dataset, int xCol, int yCol, int zCol)
+        {
+            // Build X, Y, Z Axis cylinders
+            CreateAxisLine(Vector3.zero, new Vector3(m_AxisLength, 0, 0), Color.red, "X-Axis");
+            CreateAxisLine(Vector3.zero, new Vector3(0, m_AxisLength, 0), Color.green, "Y-Axis");
+            CreateAxisLine(Vector3.zero, new Vector3(0, 0, m_AxisLength), Color.blue, "Z-Axis");
+
+            // Build Wireframe cube around scatterplot boundaries
+            CreateGridLine(new Vector3(m_AxisLength, 0, 0), new Vector3(m_AxisLength, m_AxisLength, 0));
+            CreateGridLine(new Vector3(0, m_AxisLength, 0), new Vector3(m_AxisLength, m_AxisLength, 0));
+            CreateGridLine(new Vector3(0, 0, m_AxisLength), new Vector3(m_AxisLength, 0, m_AxisLength));
+            CreateGridLine(new Vector3(m_AxisLength, 0, 0), new Vector3(m_AxisLength, 0, m_AxisLength));
+            
+            CreateGridLine(new Vector3(0, m_AxisLength, 0), new Vector3(0, m_AxisLength, m_AxisLength));
+            CreateGridLine(new Vector3(0, 0, m_AxisLength), new Vector3(0, m_AxisLength, m_AxisLength));
+            
+            CreateGridLine(new Vector3(m_AxisLength, m_AxisLength, 0), new Vector3(m_AxisLength, m_AxisLength, m_AxisLength));
+            CreateGridLine(new Vector3(0, m_AxisLength, m_AxisLength), new Vector3(m_AxisLength, m_AxisLength, m_AxisLength));
+            CreateGridLine(new Vector3(m_AxisLength, 0, m_AxisLength), new Vector3(m_AxisLength, m_AxisLength, m_AxisLength));
+
+            // Axis labels names and ranges
+            if (xCol >= 0 && xCol < dataset.ColumnCount)
+                CreateAxisLabel(dataset.Columns[xCol], new Vector3(m_AxisLength / 2f, -0.1f, 0), "X_Label");
+            
+            if (yCol >= 0 && yCol < dataset.ColumnCount)
+                CreateAxisLabel(dataset.Columns[yCol], new Vector3(-0.1f, m_AxisLength / 2f, 0), "Y_Label");
+            
+            if (zCol >= 0 && zCol < dataset.ColumnCount)
+                CreateAxisLabel(dataset.Columns[zCol], new Vector3(0, -0.1f, m_AxisLength / 2f), "Z_Label");
+        }
+
+        private void CreateAxisLine(Vector3 start, Vector3 end, Color color, string name)
+        {
+            GameObject lineObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            lineObj.name = name;
+            lineObj.transform.SetParent(m_AxesContainer, false);
+            
+            // Set scale and rotation to bridge start and end
+            Vector3 direction = end - start;
+            float distance = direction.magnitude;
+            lineObj.transform.localPosition = start + direction / 2f;
+            lineObj.transform.localScale = new Vector3(0.01f, distance / 2f, 0.01f);
+            lineObj.transform.localRotation = Quaternion.FromToRotation(Vector3.up, direction);
+
+            // Set color
+            Renderer r = lineObj.GetComponent<Renderer>();
+            if (r != null)
+            {
+                Material m = Instantiate(m_AxisMaterial);
+                m.color = color;
+                r.sharedMaterial = m;
+            }
+
+            // Remove collider so it doesn't block rays
+            Destroy(lineObj.GetComponent<Collider>());
+
+            m_ActiveAxes.Add(lineObj);
+        }
+
+        private void CreateGridLine(Vector3 start, Vector3 end)
+        {
+            GameObject lineObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            lineObj.name = "GridLine";
+            lineObj.transform.SetParent(m_AxesContainer, false);
+
+            Vector3 direction = end - start;
+            float distance = direction.magnitude;
+            lineObj.transform.localPosition = start + direction / 2f;
+            lineObj.transform.localScale = new Vector3(0.003f, distance / 2f, 0.003f); // Thinner than axes
+            lineObj.transform.localRotation = Quaternion.FromToRotation(Vector3.up, direction);
+
+            Renderer r = lineObj.GetComponent<Renderer>();
+            if (r != null)
+            {
+                Material m = Instantiate(m_AxisMaterial);
+                m.color = new Color(1, 1, 1, 0.2f); // Faint white grid
+                r.sharedMaterial = m;
+            }
+
+            Destroy(lineObj.GetComponent<Collider>());
+
+            m_ActiveAxes.Add(lineObj);
+        }
+
+        private void CreateAxisLabel(DatasetColumn column, Vector3 position, string name)
+        {
+            GameObject labelObj = new GameObject(name);
+            labelObj.transform.SetParent(m_AxesContainer, false);
+            labelObj.transform.localPosition = position;
+            labelObj.transform.localScale = Vector3.one * 0.15f; // Small but readable scale
+
+            Canvas canvas = labelObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            RectTransform rect = labelObj.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(3, 1);
+
+            GameObject textObj = new GameObject("Text");
+            textObj.transform.SetParent(labelObj.transform, false);
+            TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
+            tmpText.fontSize = 12;
+            tmpText.alignment = TextAlignmentOptions.Center;
+            tmpText.color = Color.white;
+
+            // Display column name plus range if numeric
+            if (column.IsNumeric)
+            {
+                tmpText.text = $"{column.Name}\n[{column.MinValue:F1} to {column.MaxValue:F1}]";
+            }
+            else
+            {
+                tmpText.text = $"{column.Name}\n[{column.UniqueCount} cats]";
+            }
+
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.sizeDelta = Vector2.zero;
+            textRect.anchoredPosition = Vector2.zero;
+
+            m_ActiveAxes.Add(labelObj);
+        }
+
+        private void ClearPoints()
+        {
+            foreach (var p in m_ActivePoints)
+            {
+                if (p != null) Destroy(p);
+            }
+            m_ActivePoints.Clear();
+        }
+
+        private void ClearAxes()
+        {
+            foreach (var a in m_ActiveAxes)
+            {
+                if (a != null) Destroy(a);
+            }
+            m_ActiveAxes.Clear();
+        }
+    }
+}
