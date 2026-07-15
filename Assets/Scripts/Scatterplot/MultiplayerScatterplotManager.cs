@@ -9,7 +9,7 @@ namespace DataViz
         public static MultiplayerScatterplotManager Instance { get; private set; }
 
         [Header("Dataset Settings")]
-        public string CurrentDatasetName = "iris.csv";
+        public string CurrentDatasetName = "test.csv";
 
         [Header("Visualization Settings")]
         public int XColumnIndex = 0;
@@ -39,7 +39,20 @@ namespace DataViz
 
         private void Start()
         {
-            LoadLocalDataset(CurrentDatasetName);
+            string[] csvFiles = Directory.GetFiles(
+                Application.streamingAssetsPath,
+                "*.csv"
+            );
+
+            if (csvFiles.Length > 0)
+            {
+                CurrentDatasetName = Path.GetFileName(csvFiles[0]);
+                LoadLocalDataset(CurrentDatasetName);
+            }
+            else
+            {
+                Debug.LogError("No CSV files found in StreamingAssets.");
+            }
         }
 
         public void LoadLocalDataset(string fileName)

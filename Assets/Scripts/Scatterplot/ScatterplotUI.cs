@@ -12,11 +12,11 @@ namespace DataViz
         public MultiplayerScatterplotManager m_Manager;
 
         [Header("UI Controls")]
-        public Dropdown m_DatasetDropdown;
-        public Dropdown m_XColumnDropdown;
-        public Dropdown m_YColumnDropdown;
-        public Dropdown m_ZColumnDropdown;
-        public Dropdown m_ColorColumnDropdown;
+        public TMP_Dropdown m_DatasetDropdown;
+        public TMP_Dropdown m_XColumnDropdown;
+        public TMP_Dropdown m_YColumnDropdown;
+        public TMP_Dropdown m_ZColumnDropdown;
+        public TMP_Dropdown m_ColorColumnDropdown;
         public Slider m_PointSizeSlider;
         public TextMeshProUGUI m_PointSizeValueText;
 
@@ -104,8 +104,13 @@ namespace DataViz
 
             // Populate the X, Y, Z, Color column dropdown options
             List<string> columns = new();
+
+            Debug.Log($"[ScatterplotUI] Dataset loaded: {m_Manager.CurrentDatasetName}, Columns: {string.Join(", ", columns)}");
+
             foreach (var col in m_Manager.LoadedDataset.Columns)
             {
+
+                Debug.Log(col.Name);
                 columns.Add(col.Name);
             }
 
@@ -124,6 +129,8 @@ namespace DataViz
             m_ColorColumnDropdown.AddOptions(colorOptions);
 
             SyncUIWithManager();
+
+
         }
 
         private void SyncUIWithManager()
