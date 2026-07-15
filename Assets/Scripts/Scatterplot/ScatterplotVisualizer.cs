@@ -22,6 +22,8 @@ namespace DataViz
         private List<GameObject> m_ActivePoints = new();
         private List<GameObject> m_ActiveAxes = new();
 
+        public ScatterplotInstancedRenderer m_GPUPoints;
+
         private void Start()
         {
             if (m_Manager == null)
@@ -50,6 +52,11 @@ namespace DataViz
             {
                 m_AxisMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 m_AxisMaterial.color = Color.white;
+            }
+
+            if (m_GPUPoints == null)
+            {
+                m_GPUPoints = GetComponent<ScatterplotInstancedRenderer>();
             }
 
             RegeneratePlot();
@@ -100,6 +107,9 @@ namespace DataViz
                 }
             }
 
+
+            //TEMPORARILY COMMENTED OUT WHILE I TRY OUT GPU INSTANCING
+            /*
             for (int i = 0; i < dataset.RowCount; i++)
             {
                 DatasetRow row = dataset.Rows[i];
@@ -205,6 +215,64 @@ namespace DataViz
 
                 m_ActivePoints.Add(pointObj);
             }
+            */
+
+            // GPU Instanced Rendering
+            List<Vector3> positions = new();
+            List<Color> colors = new();
+
+            for (int i = 0; i < dataset.RowCount; i++)
+            {
+                DatasetRow row = dataset.Rows[i];
+
+                float xNorm =
+                    row.GetNormalizedValue(xCol);
+
+                float yNorm =
+                    row.GetNormalizedValue(yCol);
+
+                float zNorm =
+                    row.GetNormalizedValue(zCol);
+
+                positions.Add(
+                    transform.TransformPoint(
+                        new Vector3(xNorm, yNorm, zNorm) - Vector3.one * (m_AxisLength * 0.5f)
+                    )
+                );
+
+                Color pointColor = Color.cyan;
+
+                if (colorCol >= 0 &&
+                    colorCol < dataset.ColumnCount)
+                {
+                    var meta =
+                        dataset.Columns[colorCol];
+
+                    if (meta.IsNumeric)
+                    {
+                        float norm =
+                            row.GetNormalizedValue(
+                                colorCol
+                            );
+
+                        pointColor =
+                            Color.Lerp(
+                                Color.blue,
+                                Color.red,
+                                norm
+                            );
+                    }
+                }
+
+                colors.Add(pointColor);
+            }
+
+            m_GPUPoints.Build(
+                positions,
+                colors,
+                0.1f
+            );
+
         }
 
         private void BuildAxesAndGrid(Dataset dataset, int xCol, int yCol, int zCol)
@@ -296,7 +364,7 @@ namespace DataViz
             GameObject labelObj = new GameObject(name);
             labelObj.transform.SetParent(m_AxesContainer, false);
             labelObj.transform.localPosition = position;
-            labelObj.transform.localScale = Vector3.one * 0.15f; // Small but readable scale
+            labelObj.transform.localScale = Vector3.one * 0.03f; // Small but readable scale
 
             Canvas canvas = labelObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
@@ -306,7 +374,7 @@ namespace DataViz
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(labelObj.transform, false);
             TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
-            tmpText.fontSize = 12;
+            tmpText.fontSize = 3;
             tmpText.alignment = TextAlignmentOptions.Center;
             tmpText.color = Color.white;
 
@@ -335,7 +403,13 @@ namespace DataViz
             {
                 if (p != null) Destroy(p);
             }
+
             m_ActivePoints.Clear();
+
+            if (m_GPUPoints != null)
+            {
+                m_GPUPoints.Clear();
+            }
         }
 
         private void ClearAxes()
