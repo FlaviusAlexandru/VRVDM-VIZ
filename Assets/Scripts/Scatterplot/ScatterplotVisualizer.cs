@@ -270,7 +270,7 @@ namespace DataViz
             m_GPUPoints.Build(
                 positions,
                 colors,
-                0.1f
+                pointSize
             );
 
         }
