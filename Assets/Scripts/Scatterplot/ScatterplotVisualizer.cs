@@ -29,10 +29,7 @@ namespace DataViz
             if (m_Manager == null)
                 m_Manager = MultiplayerScatterplotManager.Instance;
 
-            if (m_Manager != null)
-            {
-                m_Manager.OnPlotSettingsChanged += RegeneratePlot;
-            }
+            if (m_Manager != null) { m_Manager.OnPlotSettingsChanged += RegeneratePlot; }
 
             // Create containers
             m_PointsContainer = new GameObject("Points").transform;
@@ -44,30 +41,27 @@ namespace DataViz
             m_AxesContainer.localPosition = new Vector3(-m_AxisLength / 2f, -m_AxisLength / 2f, -m_AxisLength / 2f);
 
             // Default material if none assigned
-            if (m_PointMaterial == null)
-            {
-                m_PointMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            }
+            if (m_PointMaterial == null) { m_PointMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit")); }
             if (m_AxisMaterial == null)
             {
                 m_AxisMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 m_AxisMaterial.color = Color.white;
             }
 
-            if (m_GPUPoints == null)
-            {
-                m_GPUPoints = GetComponent<ScatterplotInstancedRenderer>();
-            }
+            if (m_GPUPoints == null) { m_GPUPoints = GetComponent<ScatterplotInstancedRenderer>(); }
 
             RegeneratePlot();
         }
 
+        private void OnEnable()
+        {
+            Debug.Log($"Visualizer enabled {GetEntityId()}");
+        }
+
         private void OnDestroy()
         {
-            if (m_Manager != null)
-            {
-                m_Manager.OnPlotSettingsChanged -= RegeneratePlot;
-            }
+            Debug.Log($"Visualizer destroyed {GetEntityId()}");
+            if (m_Manager != null) { m_Manager.OnPlotSettingsChanged -= RegeneratePlot; }
         }
 
         public void RegeneratePlot()
@@ -374,7 +368,7 @@ namespace DataViz
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(labelObj.transform, false);
             TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
-            tmpText.fontSize = 3;
+            tmpText.fontSize = 1;
             tmpText.alignment = TextAlignmentOptions.Center;
             tmpText.color = Color.white;
 

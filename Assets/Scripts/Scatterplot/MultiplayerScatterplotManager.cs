@@ -37,6 +37,11 @@ namespace DataViz
             }
         }
 
+        private void OnDestroy()
+        {
+            Debug.Log($"[MultiplayerScatterplotManager] OnDestroy called, clearing Instance {GetEntityId()}");
+        }
+
         private void Start()
         {
             string[] csvFiles = Directory.GetFiles(
