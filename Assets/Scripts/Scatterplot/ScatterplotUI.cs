@@ -105,12 +105,12 @@ namespace DataViz
             // Populate the X, Y, Z, Color column dropdown options
             List<string> columns = new();
 
-            Debug.Log($"[ScatterplotUI] Dataset loaded: {m_Manager.CurrentDatasetName}, Columns: {string.Join(", ", columns)}");
+            //Debug.Log($"[ScatterplotUI] Dataset loaded: {m_Manager.CurrentDatasetName}, Columns: {string.Join(", ", columns)}");
 
             foreach (var col in m_Manager.LoadedDataset.Columns)
             {
 
-                Debug.Log(col.Name);
+                //Debug.Log(col.Name);
                 columns.Add(col.Name);
             }
 

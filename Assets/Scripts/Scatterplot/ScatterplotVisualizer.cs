@@ -228,6 +228,11 @@ namespace DataViz
                 if (column.IsCategorical)
                 {
                     uniqueColorCategories = new List<string>(column.UniqueValues);
+                    Debug.Log($"[ScatterplotVisualizer] Found categorical column with {uniqueColorCategories.Count} unique values");
+                }
+                else
+                {
+                    Debug.Log($"[ScatterplotVisualizer] Color column is numeric, not categorical");
                 }
             }
 
@@ -294,6 +299,15 @@ namespace DataViz
                                     categoricalPalette.Length
                                 ];
                         }
+                        else
+                        {
+                            Debug.LogWarning($"[ScatterplotVisualizer] Unknown category '{rawVal}' at index {i}");
+                        }
+                    }
+                    else
+                    {
+                        // No color column selected
+                        pointColor = Color.cyan;
                     }
                 }
                 colors.Add(pointColor);

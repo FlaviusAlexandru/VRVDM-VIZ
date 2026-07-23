@@ -35,6 +35,13 @@ namespace DataViz
             float pointSize)
         {
             Debug.Log($"[ScatterplotInstancedRenderer] GPU Build called with {positions.Count} points");
+            
+            // Log some sample colors for debugging
+            if (colors.Count > 0)
+            {
+                Debug.Log($"[ScatterplotInstancedRenderer] Sample colors: {colors[0]}, {colors[Mathf.Min(1, colors.Count-1)]}, {colors[Mathf.Min(2, colors.Count-1)]}");
+            }
+            
             Clear();
 
             const int batchSize = 1023;
@@ -68,6 +75,8 @@ namespace DataViz
                 m_Batches.Add(matrices);
                 m_ColorBatches.Add(batchColors);
             }
+            
+            Debug.Log($"[ScatterplotInstancedRenderer] Created {m_Batches.Count} batches");
         }
 
         private void Update()
@@ -79,8 +88,14 @@ namespace DataViz
             {
                 m_PropertyBlock.Clear();
 
+                // Try both _Color and _BaseColor for different shader compatibility
                 m_PropertyBlock.SetVectorArray(
                     "_Color",
+                    m_ColorBatches[i]
+                );
+                
+                m_PropertyBlock.SetVectorArray(
+                    "_BaseColor",
                     m_ColorBatches[i]
                 );
 

@@ -39,6 +39,10 @@ namespace DataViz
 
         private void OnDestroy()
         {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
             Debug.Log($"[MultiplayerScatterplotManager] OnDestroy called, clearing Instance {GetEntityId()}");
         }
 

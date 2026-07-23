@@ -1,8 +1,15 @@
 fileFormatVersion: 2
 guid: 04bb5f307f2e48b4fbaa6da865fd4091
+AssetOrigin:
+  serializedVersion: 1
+  productId: 119922
+  packageName: PUN 2 - FREE
+  packageVersion: 2.55
+  assetPath: Assets/Photon/PhotonLibs/WebSocket/WebSocket.jslib
+  uploadId: 946374
 PluginImporter:
   externalObjects: {}
-  serializedVersion: 2
+  serializedVersion: 3
   iconMap: {}
   executionOrder: {}
   defineConstraints: []
@@ -11,29 +18,40 @@ PluginImporter:
   isExplicitlyReferenced: 0
   validateReferences: 1
   platformData:
-  - first:
-      Any: 
-    second:
-      enabled: 0
-      settings: {}
-  - first:
-      Editor: Editor
-    second:
+    Any:
       enabled: 0
       settings:
+        Exclude Editor: 1
+        Exclude Linux64: 1
+        Exclude OSXUniversal: 1
+        Exclude WebGL: 1
+        Exclude Win: 1
+        Exclude Win64: 1
+    Editor:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
         DefaultValueInitialized: true
-  - first:
-      WebGL: WebGL
-    second:
-      enabled: 1
+        OS: AnyOS
+    Linux64:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+    OSXUniversal:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+    WebGL:
+      enabled: 0
       settings: {}
+    Win:
+      enabled: 0
+      settings:
+        CPU: x86
+    Win64:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 119922
-  packageName: PUN 2 - FREE
-  packageVersion: 2.55
-  assetPath: Assets/Photon/PhotonLibs/WebSocket/WebSocket.jslib
-  uploadId: 946374

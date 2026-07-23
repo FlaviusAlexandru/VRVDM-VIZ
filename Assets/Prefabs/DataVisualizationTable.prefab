@@ -1207,6 +1207,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5324473052356203901}
   - component: {fileID: 2448664065147734841}
+  - component: {fileID: 5025899417572166804}
   m_Layer: 0
   m_Name: ScatterplotVisualizer
   m_TagString: Untagged
@@ -1247,6 +1248,25 @@ MonoBehaviour:
   m_PointMaterial: {fileID: 0}
   m_AxisMaterial: {fileID: 0}
   m_GPUPoints: {fileID: 0}
+  m_GPUInteractable: {fileID: 0}
+--- !u!114 &5025899417572166804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2191274504628492332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d161d16059a4021458601e5ff33313f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DataViz.GPUPointInteractable
+  m_Visualizer: {fileID: 2448664065147734841}
+  m_GPUPoints: {fileID: 2541844292624454600}
+  m_TooltipPrefab: {fileID: 0}
+  m_PointSize: 0.02
+  m_RaycastDistance: 10
+  m_HoverThreshold: 0.05
 --- !u!1 &2324487630200758722
 GameObject:
   m_ObjectHideFlags: 0

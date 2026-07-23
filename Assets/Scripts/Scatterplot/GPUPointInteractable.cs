@@ -33,7 +33,13 @@ namespace DataViz
             if (m_ActiveTooltip != null)
             {
                 Destroy(m_ActiveTooltip);
+                m_ActiveTooltip = null;
             }
+            
+            // Clear references to prevent memory leaks
+            m_PointPositions.Clear();
+            m_PointColors.Clear();
+            m_HoveredPointIndex = -1;
         }
 
         public void SetPointData(List<Vector3> positions, List<Color> colors, float pointSize)
