@@ -198,7 +198,7 @@ namespace DataViz
             canvas.renderMode = RenderMode.WorldSpace;
 
             RectTransform rect = tooltipObj.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(300, 180);
+            rect.sizeDelta = new Vector2(0.3f, 0.18f);
 
             // Add background panel
             GameObject bgObj = new GameObject("Background");
@@ -214,7 +214,7 @@ namespace DataViz
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(tooltipObj.transform, false);
             TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
-            tmpText.fontSize = 18;
+            tmpText.fontSize = 5;
             tmpText.alignment = TextAlignmentOptions.Left;
             tmpText.enableWordWrapping = true;
             tmpText.color = Color.white;

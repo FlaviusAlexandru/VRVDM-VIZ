@@ -16,7 +16,7 @@ namespace DataViz
         public int YColumnIndex = 1;
         public int ZColumnIndex = 2;
         public int ColorColumnIndex = -1;
-        public float PointSize = 0.02f;
+        public float PointSize = 0.1f;
 
         [Header("Loaded Dataset")]
         public Dataset LoadedDataset;
