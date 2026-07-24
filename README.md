@@ -141,6 +141,7 @@ Column1,Column2,Column3,CategoryColumn
 - [ ] Improved categorical color palette customization
 - [ ] Real-time data streaming support
 - [ ] Collaborative annotation features
+- [ ] Shuffle button that shuffles for example how the data source is mapped, or the data source itself etc., maybe expand to include colors etc.
 
 ## Contributing
 
