@@ -141,7 +141,7 @@ namespace DataViz
 
         public void RequestPointSizeRpc(float size)
         {
-            PointSize = Mathf.Clamp(size, 0.005f, 0.1f);
+            PointSize = Mathf.Clamp(size, 0, 1);
             OnPlotSettingsChanged?.Invoke();
         }
     }

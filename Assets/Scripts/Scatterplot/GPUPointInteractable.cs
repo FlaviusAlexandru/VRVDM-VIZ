@@ -194,11 +194,13 @@ namespace DataViz
             GameObject tooltipObj = new GameObject("GPU Tooltip");
             tooltipObj.transform.SetParent(transform, false);
 
+            tooltipObj.transform.localScale = Vector3.one * 0.002f; // Scale down for world space
+
             Canvas canvas = tooltipObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
 
             RectTransform rect = tooltipObj.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(0.3f, 0.18f);
+            rect.sizeDelta = new Vector2(300, 180);
 
             // Add background panel
             GameObject bgObj = new GameObject("Background");
@@ -214,7 +216,7 @@ namespace DataViz
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(tooltipObj.transform, false);
             TextMeshProUGUI tmpText = textObj.AddComponent<TextMeshProUGUI>();
-            tmpText.fontSize = 5;
+            tmpText.fontSize = 12;
             tmpText.alignment = TextAlignmentOptions.Left;
             tmpText.enableWordWrapping = true;
             tmpText.color = Color.white;
@@ -222,7 +224,9 @@ namespace DataViz
             RectTransform textRect = textObj.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.sizeDelta = new Vector2(-20, -20);
+            textRect.offsetMin = new Vector2(10, 10);
+            textRect.offsetMax = new Vector2(-10, -10);
+
             textRect.anchoredPosition = Vector2.zero;
 
             return tooltipObj;
